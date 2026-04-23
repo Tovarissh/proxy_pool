@@ -351,6 +351,21 @@ def create_app(pool: ProxyPool, health_checker: Optional[HealthChecker] = None,
     return app
 
 # ============================================================================
+# 模块级 app 实例（供 gunicorn 使用：gunicorn proxy_pool.web_ui:app）
+# ============================================================================
+def _create_default_app():
+    try:
+        from proxy_pool.config import default_config
+    except ImportError:
+        from config import default_config
+    _config = default_config()
+    _pool = ProxyPool(_config.pool)
+    _hc = HealthChecker(_pool, _config.pool)
+    return create_app(_pool, _hc, _config.pool)
+
+app = _create_default_app()
+
+# ============================================================================
 # 独立运行测试
 # ============================================================================
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 # 复制源码
 COPY . .
+# 设置PYTHONPATH，让web_ui.py中的 from proxy_pool.xxx import 能找到父目录的proxy_pool包
+ENV PYTHONPATH=/app/..
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD curl -f http://localhost:5000/api/stats || exit 1

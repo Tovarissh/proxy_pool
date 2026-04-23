@@ -21,6 +21,54 @@
             --border: #3d4f6e;
         }
         
+        /* ── 全局字体颜色覆写，防止 Bootstrap 默认色污染 ── */
+        body,
+        body *:not(.btn):not(.badge) {
+            color: var(--text);
+        }
+        /* Bootstrap .text-muted 覆写 */
+        .text-muted, .form-text,
+        small, .small {
+            color: var(--text-muted) !important;
+        }
+        /* 表格 */
+        .table, .table th, .table td,
+        .table thead th, .table tbody td {
+            color: var(--text) !important;
+        }
+        /* 导航/Tab */
+        .nav-link, .nav-link:hover {
+            color: var(--text-muted) !important;
+        }
+        .nav-link.active {
+            color: var(--primary) !important;
+        }
+        /* 表单标签与输入框 */
+        .form-label, label {
+            color: var(--text) !important;
+        }
+        .form-control, .form-select, textarea {
+            color: var(--text) !important;
+        }
+        .form-control::placeholder, textarea::placeholder {
+            color: #64748b !important;
+        }
+        /* 卡片标题、段落 */
+        .card-title, .card-text, h1, h2, h3, h4, h5, h6, p, span, li {
+            color: var(--text);
+        }
+        /* Badge 文字保持白色 */
+        .badge {
+            color: #fff !important;
+        }
+        /* 按钮文字白色 */
+        .btn {
+            color: #fff !important;
+        }
+        .btn-outline-secondary, .btn-outline-light {
+            color: var(--text-muted) !important;
+        }
+        
         body {
             background-color: var(--bg-dark);
             color: var(--text);

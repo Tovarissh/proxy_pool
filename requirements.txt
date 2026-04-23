@@ -1,0 +1,6 @@
+Flask>=3.0
+PySocks>=1.7
+requests>=2.31
+aiohttp>=3.9
+pyyaml>=6.0
+gunicorn>=22.0

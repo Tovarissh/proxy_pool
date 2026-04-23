@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代理池管理界面</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --bg-dark: #1a1a2e;
+            --card-bg: #16213e;
+            --primary: #0ea5e9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding-top: 20px;
+            padding-bottom: 60px;
+        }
+        
+        .container {
+            max-width: 1400px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+        
+        .table-dark-custom {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        
+        .table-dark-custom th {
+            border-color: var(--border);
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        
+        .table-dark-custom td {
+            border-color: var(--border);
+        }
+        
+        .table-dark-custom tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .badge-alive {
+            background-color: var(--success);
+        }
+        
+        .badge-dead {
+            background-color: var(--danger);
+        }
+        
+        .badge-untested {
+            background-color: var(--warning);
+        }
+        
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .status-dot.alive {
+            background-color: var(--success);
+        }
+        
+        .status-dot.dead {
+            background-color: var(--danger);
+        }
+        
+        .status-dot.untested {
+            background-color: var(--warning);
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .nav-tabs-dark {
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .nav-tabs-dark .nav-link {
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: -1px;
+        }
+        
+        .nav-tabs-dark .nav-link:hover {
+            color: var(--text);
+            border-color: var(--border);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-tabs-dark .nav-link.active {
+            color: var(--primary);
+            background-color: var(--card-bg);
+            border-color: var(--border) var(--border) var(--card-bg);
+            font-weight: 600;
+        }
+        
+        .form-control-dark {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-color: var(--border);
+            color: var(--text);
+        }
+        
+        .form-control-dark:focus {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-color: var(--primary);
+            color: var(--text);
+            box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25);
+        }
+        
+        .btn-primary-custom {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary-custom:hover {
+            background-color: #0c94d6;
+            border-color: #0c94d6;
+        }
+        
+        .btn-success-custom {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger-custom {
+            background-color: var(--danger);
+            border-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-warning-custom {
+            background-color: var(--warning);
+            border-color: var(--warning);
+            color: white;
+        }
+        
+        .alert-custom {
+            background-color: rgba(14, 165, 233, 0.1);
+            border-color: var(--primary);
+            color: var(--text);
+        }
+        
+        .refresh-indicator {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .latency-good {
+            color: var(--success);
+        }
+        
+        .latency-medium {
+            color: var(--warning);
+        }
+        
+        .latency-bad {
+            color: var(--danger);
+        }
+        
+        .proxy-url {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--card-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-hdd-network"></i> 代理池管理界面</h1>
+            <div class="refresh-indicator">
+                最后刷新: <span id="last-refresh">-</span>
+                <button id="btn-refresh" class="btn btn-sm btn-outline-primary ms-2">
+                    <i class="bi bi-arrow-clockwise"></i> 刷新
+                </button>
+            </div>
+        </header>
+        
+        <!-- 标签页导航 -->
+        <ul class="nav nav-tabs nav-tabs-dark mb-4" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                    <i class="bi bi-speedometer2"></i> 仪表盘
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="proxies-tab" data-bs-toggle="tab" data-bs-target="#proxies" type="button" role="tab">
+                    <i class="bi bi-list-ul"></i> 代理列表
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button" role="tab">
+                    <i class="bi bi-plus-circle"></i> 添加代理
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="config-tab" data-bs-toggle="tab" data-bs-target="#config" type="button" role="tab">
+                    <i class="bi bi-gear"></i> 配置
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="export-tab" data-bs-toggle="tab" data-bs-target="#export" type="button" role="tab">
+                    <i class="bi bi-download"></i> 导出
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="mainTabsContent">
+            <!-- 仪表盘标签页 -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="stat-number text-primary" id="stat-total">0</div>
+                            <div class="stat-label">代理总数</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="stat-number text-success" id="stat-alive">0</div>
+                            <div class="stat-label">存活代理</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="stat-number text-danger" id="stat-dead">0</div>
+                            <div class="stat-label">死亡代理</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="stat-number" id="stat-rate">0%</div>
+                            <div class="stat-label">存活率</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-graph-up"></i> 统计概览
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>代理状态分布</span>
+                                        <span id="dist-summary">0 alive, 0 dead</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" id="progress-alive" style="width: 0%"></div>
+                                        <div class="progress-bar bg-danger" id="progress-dead" style="width: 0%"></div>
+                                        <div class="progress-bar bg-warning" id="progress-untested" style="width: 0%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <small><span class="status-dot alive"></span> 存活</small>
+                                        <small><span class="status-dot dead"></span> 死亡</small>
+                                        <small><span class="status-dot untested"></span> 未检测</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mt-4">
+                                    <div class="col-6">
+                                        <div class="d-flex justify-content-between">
+                                            <span>总请求数:</span>
+                                            <strong id="stat-requests">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>成功数:</span>
+                                            <strong class="text-success" id="stat-success">0</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>失败数:</span>
+                                            <strong class="text-danger" id="stat-fail">0</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex justify-content-between">
+                                            <span>成功率:</span>
+                                            <strong id="stat-success-rate">0%</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>检测间隔:</span>
+                                            <strong id="stat-check-interval">--</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>调度模式:</span>
+                                            <strong id="stat-scheduling">--</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-lightning-charge"></i> 快速操作</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <button id="btn-check-all" class="btn btn-primary-custom w-100">
+                                            <i class="bi bi-heart-pulse"></i> 全量健康检测
+                                        </button>
+                                        <small class="d-block text-muted mt-1">对所有代理执行健康检测</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button id="btn-reset-dead" class="btn btn-warning-custom w-100">
+                                            <i class="bi bi-arrow-counterclockwise"></i> 重置死亡标记
+                                        </button>
+                                        <small class="d-block text-muted mt-1">将所有死亡代理标记为存活</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button id="btn-add-sample" class="btn btn-outline-primary w-100">
+                                            <i class="bi bi-magic"></i> 添加示例代理
+                                        </button>
+                                        <small class="d-block text-muted mt-1">添加几个示例代理用于测试</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button id="btn-clear-all" class="btn btn-outline-danger w-100">
+                                            <i class="bi bi-trash"></i> 清空代理池
+                                        </button>
+                                        <small class="d-block text-muted mt-1">删除所有代理（谨慎！）</small>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">自动刷新</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="switch-auto-refresh" checked>
+                                        <label class="form-check-label" for="switch-auto-refresh">每 <span id="refresh-interval-display">30</span> 秒自动刷新统计数据</label>
+                                    </div>
+                                    <div class="mt-2">
+                                        <input type="range" class="form-range" id="refresh-interval-slider" min="10" max="120" step="5" value="30">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 代理列表标签页 -->
+            <div class="tab-pane fade" id="proxies" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>代理列表</span>
+                        <div class="d-flex gap-2">
+                            <div class="input-group input-group-sm" style="width: 250px;">
+                                <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                                <select class="form-select form-select-sm form-control-dark" id="filter-status">
+                                    <option value="">全部状态</option>
+                                    <option value="alive">存活</option>
+                                    <option value="dead">死亡</option>
+                                    <option value="untested">未检测</option>
+                                </select>
+                            </div>
+                            <button id="btn-refresh-proxies" class="btn btn-sm btn-primary-custom">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-dark-custom table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>代理</th>
+                                        <th>协议</th>
+                                        <th>状态</th>
+                                        <th>延迟</th>
+                                        <th>最后检测</th>
+                                        <th>国家</th>
+                                        <th>使用次数</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="proxies-table-body">
+                                    <!-- 通过 JavaScript 填充 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="proxies-empty" class="text-center py-5" style="display: none;">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-muted);"></i>
+                            <h5 class="mt-3">暂无代理</h5>
+                            <p class="text-muted">添加一些代理开始使用</p>
+                        </div>
+                        <div id="proxies-loading" class="text-center py-5">
+                            <div class="loading-spinner mx-auto"></div>
+                            <p class="mt-2">加载代理列表中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 添加代理标签页 -->
+            <div class="tab-pane fade" id="add" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                批量添加代理
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="proxies-textarea" class="form-label">
+                                        每行一个代理，支持多种格式：
+                                    </label>
+                                    <textarea class="form-control form-control-dark" id="proxies-textarea" rows="12" placeholder="socks5://user:pass@host:port
+http://host:port
+host:port:user:pass
+host:port"></textarea>
+                                    <div class="form-text">
+                                        支持格式：socks5://user:pass@host:port, http://host:port, host:port:user:pass, host:port
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <button id="btn-add-proxies" class="btn btn-primary-custom">
+                                        <i class="bi bi-plus-circle"></i> 添加代理
+                                    </button>
+                                    <button id="btn-clear-text" class="btn btn-outline-secondary ms-2">
+                                        清空
+                                    </button>
+                                    <button id="btn-paste-example" class="btn btn-outline-primary ms-2">
+                                        粘贴示例
+                                    </button>
+                                </div>
+                                
+                                <div id="add-result" style="display: none;">
+                                    <!-- 结果提示 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-info-circle"></i> 使用说明
+                            </div>
+                            <div class="card-body">
+                                <h6>支持的代理格式：</h6>
+                                <ul class="mb-3">
+                                    <li><code>socks5://user:pass@host:port</code></li>
+                                    <li><code>socks5://host:port</code>（无认证）</li>
+                                    <li><code>http://host:port</code></li>
+                                    <li><code>https://host:port</code></li>
+                                    <li><code>host:port</code>（默认 SOCKS5）</li>
+                                    <li><code>host:port:user:pass</code></li>
+                                    <li>CURL 格式: <code>curl --proxy socks5://host:port</code></li>
+                                </ul>
+                                
+                                <h6>注意事项：</h6>
+                                <ul>
+                                    <li>添加后会自动触发健康检测</li>
+                                    <li>重复代理不会添加</li>
+                                    <li>格式错误的行会被忽略并显示错误</li>
+                                    <li>建议先少量添加测试连通性</li>
+                                </ul>
+                                
+                                <hr>
+                                
+                                <h6>代理源推荐：</h6>
+                                <p class="small text-muted">
+                                    可以从以下网站获取免费代理列表：<br>
+                                    • <a href="https://github.com/jetkai/proxy-list" target="_blank">GitHub 代理列表</a><br>
+                                    • <a href="https://www.proxy-list.download/" target="_blank">Proxy List Download</a><br>
+                                    • <a href="https://spys.one/" target="_blank">Spys.one</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 配置标签页 -->
+            <div class="tab-pane fade" id="config" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                代理池配置
+                            </div>
+                            <div class="card-body">
+                                <form id="config-form">
+                                    <div class="mb-3">
+                                        <label for="config-scheduling" class="form-label">调度模式</label>
+                                        <select class="form-select form-control-dark" id="config-scheduling" name="scheduling_mode">
+                                            <option value="round_robin">轮询 (Round Robin)</option>
+                                            <option value="random">随机 (Random)</option>
+                                        </select>
+                                        <div class="form-text">从池中获取代理时使用的调度策略</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="config-health-interval" class="form-label">健康检测间隔（秒）</label>
+                                        <input type="number" class="form-control form-control-dark" id="config-health-interval" name="health_check_interval" min="10" max="3600" step="10">
+                                        <div class="form-text">定期执行健康检测的时间间隔</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="config-auto-refresh" class="form-label">界面自动刷新</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="config-auto-refresh" name="auto_refresh" checked>
+                                            <label class="form-check-label" for="config-auto-refresh">启用自动刷新</label>
+                                        </div>
+                                        <div class="form-text">仪表盘统计数据自动刷新</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="config-refresh-interval" class="form-label">自动刷新间隔（秒）</label>
+                                        <input type="number" class="form-control form-control-dark" id="config-refresh-interval" name="refresh_interval" min="5" max="300" step="5">
+                                        <div class="form-text">界面自动刷新的时间间隔</div>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary-custom">
+                                            <i class="bi bi-check-circle"></i> 保存配置
+                                        </button>
+                                        <button type="button" id="btn-load-config" class="btn btn-outline-primary">
+                                            重新加载
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                系统信息
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">API 端点</label>
+                                    <div class="list-group">
+                                        <div class="list-group-item bg-transparent text-white border-secondary">
+                                            <div class="d-flex justify-content-between">
+                                                <small>GET /api/stats</small>
+                                                <small class="text-primary">统计信息</small>
+                                            </div>
+                                        </div>
+                                        <div class="list-group-item bg-transparent text-white border-secondary">
+                                            <div class="d-flex justify-content-between">
+                                                <small>GET /api/proxies</small>
+                                                <small class="text-primary">代理列表</small>
+                                            </div>
+                                        </div>
+                                        <div class="list-group-item bg-transparent text-white border-secondary">
+                                            <div class="d-flex justify-content-between">
+                                                <small>POST /api/proxies</small>
+                                                <small class="text-success">添加代理</small>
+                                            </div>
+                                        </div>
+                                        <div class="list-group-item bg-transparent text-white border-secondary">
+                                            <div class="d-flex justify-content-between">
+                                                <small>POST /api/check_all</small>
+                                                <small class="text-warning">全量检测</small>
+                                            </div>
+                                        </div>
+                                        <div class="list-group-item bg-transparent text-white border-secondary">
+                                            <div class="d-flex justify-content-between">
+                                                <small>GET /api/export</small>
+                                                <small class="text-info">导出代理</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">当前状态</label>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Web UI 版本:</span>
+                                        <strong>1.0.0</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>代理池版本:</span>
+                                        <strong id="config-pool-version">--</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>最近配置更新时间:</span>
+                                        <strong id="config-last-update">--</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-custom">
+                                    <i class="bi bi-info-circle"></i>
+                                    <small>配置保存在内存中，重启后恢复默认值。如需持久化，请修改配置文件。</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 导出标签页 -->
+            <div class="tab-pane fade" id="export" role="tabpanel">
+                <div class="card">
+                    <div class="card-header">
+                        导出代理列表
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="export-format" class="form-label">导出格式</label>
+                            <select class="form-select form-control-dark" id="export-format">
+                                <option value="text">纯文本（每行一个）</option>
+                                <option value="json">JSON</option>
+                                <option value="csv">CSV</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="export-filter" class="form-label">过滤条件</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="export-alive-only" checked>
+                                <label class="form-check-label" for="export-alive-only">仅导出存活代理</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="export-clean-only">
+                                <label class="form-check-label" for="export-clean-only">仅导出 RBL 干净的代理</label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button id="btn-export" class="btn btn-primary-custom">
+                                <i class="bi bi-download"></i> 生成导出
+                            </button>
+                            <button id="btn-copy-export" class="btn btn-outline-primary ms-2">
+                                <i class="bi bi-clipboard"></i> 复制到剪贴板
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="export-result" class="form-label">导出结果</label>
+                            <textarea class="form-control form-control-dark" id="export-result" rows="12" readonly></textarea>
+                        </div>
+                        
+                        <div class="alert alert-custom">
+                            <i class="bi bi-lightbulb"></i>
+                            <small>提示：你可以直接访问 <a href="/api/export" target="_blank">/api/export</a> 获取纯文本格式的代理列表。</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="mt-5 text-center text-muted">
+            <small>代理池 Web UI &copy; 2023 - 基于 Flask + Bootstrap 5 | 仅供内部使用</small>
+        </footer>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    
+    <script>
+        // 全局状态
+        let lastRefreshTime = null;
+        let autoRefreshEnabled = true;
+        let autoRefreshInterval = 30; // 秒
+        let refreshTimer = null;
+        let currentProxies = [];
+        
+        // 工具函数
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString('zh-CN');
+        }
+        
+        function formatLatency(ms) {
+            if (!ms || ms === 0) return '-';
+            if (ms < 100) return `<span class="latency-good">${ms.toFixed(0)} ms</span>`;
+            if (ms < 1000) return `<span class="latency-medium">${ms.toFixed(0)} ms</span>`;
+            return `<span class="latency-bad">${ms.toFixed(0)} ms</span>`;
+        }
+        
+        function showAlert(message, type = 'info', containerId = null) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            if (containerId) {
+                document.getElementById(containerId).innerHTML = alertHtml;
+                document.getElementById(containerId).style.display = 'block';
+            } else {
+                // 在页面顶部显示
+                const container = document.createElement('div');
+                container.innerHTML = alertHtml;
+                container.className = 'container mt-3';
+                document.body.prepend(container);
+                
+                // 5秒后自动移除
+                setTimeout(() => {
+                    container.remove();
+                }, 5000);
+            }
+        }
+        
+        function updateLastRefresh() {
+            const now = new Date();
+            lastRefreshTime = now;
+            const timeStr = now.toLocaleTimeString('zh-CN');
+            document.getElementById('last-refresh').textContent = timeStr;
+        }
+        
+        // API 调用函数
+        async function apiGetStats() {
+            try {
+                const response = await fetch('/api/stats');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch stats:', error);
+                return null;
+            }
+        }
+        
+        async function apiGetProxies(status = '') {
+            try {
+                const url = status ? `/api/proxies?status=${status}` : '/api/proxies';
+                const response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch proxies:', error);
+                return [];
+            }
+        }
+        
+        async function apiAddProxies(proxies) {
+            try {
+                const response = await fetch('/api/proxies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ proxies })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to add proxies:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiCheckProxy(id) {
+            try {
+                const response = await fetch(`/api/proxies/${id}/check`, {
+                    method: 'POST'
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to check proxy:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiMarkDead(id) {
+            try {
+                const response = await fetch(`/api/proxies/${id}/mark_dead`, {
+                    method: 'POST'
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to mark proxy dead:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiMarkAlive(id) {
+            try {
+                const response = await fetch(`/api/proxies/${id}/mark_alive`, {
+                    method: 'POST'
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to mark proxy alive:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiDeleteProxy(id) {
+            try {
+                const response = await fetch(`/api/proxies/${id}`, {
+                    method: 'DELETE'
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to delete proxy:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiGetConfig() {
+            try {
+                const response = await fetch('/api/config');
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to fetch config:', error);
+                return null;
+            }
+        }
+        
+        async function apiUpdateConfig(config) {
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to update config:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiCheckAll() {
+            try {
+                const response = await fetch('/api/check_all', {
+                    method: 'POST'
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Failed to check all proxies:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function apiExport() {
+            try {
+                const response = await fetch('/api/export');
+                return await response.text();
+            } catch (error) {
+                console.error('Failed to export:', error);
+                return '';
+            }
+        }
+        
+        // 仪表盘更新
+        async function refreshDashboard() {
+            const stats = await apiGetStats();
+            if (!stats) return;
+            
+            // 更新统计卡片
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-alive').textContent = stats.alive;
+            document.getElementById('stat-dead').textContent = stats.dead;
+            document.getElementById('stat-rate').textContent = stats.alive_rate.toFixed(1) + '%';
+            
+            // 更新进度条
+            const total = stats.total || 1;
+            const alivePercent = (stats.alive / total) * 100;
+            const deadPercent = (stats.dead / total) * 100;
+            const untestedPercent = 100 - alivePercent - deadPercent;
+            
+            document.getElementById('progress-alive').style.width = `${alivePercent}%`;
+            document.getElementById('progress-dead').style.width = `${deadPercent}%`;
+            document.getElementById('progress-untested').style.width = `${untestedPercent}%`;
+            
+            document.getElementById('dist-summary').textContent = 
+                `${stats.alive} alive, ${stats.dead} dead`;
+            
+            // 更新其他统计
+            document.getElementById('stat-requests').textContent = stats.requests;
+            document.getElementById('stat-success').textContent = stats.success;
+            document.getElementById('stat-fail').textContent = stats.fail;
+            
+            const successRate = stats.requests > 0 ? (stats.success / stats.requests * 100) : 0;
+            document.getElementById('stat-success-rate').textContent = successRate.toFixed(1) + '%';
+            
+            // 更新配置信息
+            const config = await apiGetConfig();
+            if (config) {
+                document.getElementById('stat-check-interval').textContent = config.health_check_interval + ' 秒';
+                document.getElementById('stat-scheduling').textContent = 
+                    config.scheduling_mode === 'round_robin' ? '轮询' : '随机';
+            }
+            
+            updateLastRefresh();
+        }
+        
+        // 代理列表更新
+        async function refreshProxiesList() {
+            const statusFilter = document.getElementById('filter-status').value;
+            const loadingEl = document.getElementById('proxies-loading');
+            const emptyEl = document.getElementById('proxies-empty');
+            const tbody = document.getElementById('proxies-table-body');
+            
+            loadingEl.style.display = 'block';
+            emptyEl.style.display = 'none';
+            tbody.innerHTML = '';
+            
+            const proxies = await apiGetProxies(statusFilter);
+            currentProxies = proxies;
+            
+            loadingEl.style.display = 'none';
+            
+            if (proxies.length === 0) {
+                emptyEl.style.display = 'block';
+                return;
+            }
+            
+            let html = '';
+            proxies.forEach(proxy => {
+                const statusClass = proxy.status;
+                const statusText = proxy.status === 'alive' ? '存活' : 
+                                 proxy.status === 'dead' ? '死亡' : '未检测';
+                
+                html += `
+                <tr>
+                    <td>${proxy.id}</td>
+                    <td>
+                        <div class="proxy-url" title="${proxy.str}">${proxy.str}</div>
+                    </td>
+                    <td><span class="badge bg-secondary">${proxy.protocol}</span></td>
+                    <td>
+                        <span class="status-dot ${statusClass}"></span>
+                        <span class="badge badge-${statusClass}">${statusText}</span>
+                    </td>
+                    <td>${formatLatency(proxy.latency_ms)}</td>
+                    <td>${proxy.last_check_str}</td>
+                    <td>${proxy.country_code || '-'}</td>
+                    <td>${proxy.total_used}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm btn-outline-primary" onclick="checkProxy(${proxy.id})" title="检测">
+                                <i class="bi bi-heart-pulse"></i>
+                            </button>
+                            ${proxy.status === 'alive' ? `
+                                <button class="btn btn-sm btn-outline-danger" onclick="markProxyDead(${proxy.id})" title="标记死亡">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            ` : `
+                                <button class="btn btn-sm btn-outline-success" onclick="markProxyAlive(${proxy.id})" title="标记存活">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            `}
+                            <button class="btn btn-sm btn-outline-warning" onclick="deleteProxy(${proxy.id})" title="删除">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+        
+        // 代理操作函数
+        async function checkProxy(id) {
+            showAlert('正在检测代理...', 'info');
+            const result = await apiCheckProxy(id);
+            if (result.success) {
+                showAlert(`代理检测完成: ${result.new_status}`, 'success');
+                refreshProxiesList();
+                refreshDashboard();
+            } else {
+                showAlert(`检测失败: ${result.error || '未知错误'}`, 'danger');
+            }
+        }
+        
+        async function markProxyDead(id) {
+            if (!confirm('确定标记为死亡代理吗？')) return;
+            
+            const result = await apiMarkDead(id);
+            if (result.success) {
+                showAlert('代理已标记为死亡', 'warning');
+                refreshProxiesList();
+                refreshDashboard();
+            } else {
+                showAlert('标记失败', 'danger');
+            }
+        }
+        
+        async function markProxyAlive(id) {
+            if (!confirm('确定标记为存活代理吗？')) return;
+            
+            const result = await apiMarkAlive(id);
+            if (result.success) {
+                showAlert('代理已标记为存活', 'success');
+                refreshProxiesList();
+                refreshDashboard();
+            } else {
+                showAlert('标记失败', 'danger');
+            }
+        }
+        
+        async function deleteProxy(id) {
+            if (!confirm('确定删除此代理吗？')) return;
+            
+            const result = await apiDeleteProxy(id);
+            if (result.success) {
+                showAlert('代理已删除', 'success');
+                refreshProxiesList();
+                refreshDashboard();
+            } else {
+                showAlert('删除失败', 'danger');
+            }
+        }
+        
+        // 配置管理
+        async function loadConfig() {
+            const config = await apiGetConfig();
+            if (!config) return;
+            
+            // 更新表单
+            document.getElementById('config-scheduling').value = config.scheduling_mode || 'round_robin';
+            document.getElementById('config-health-interval').value = config.health_check_interval || 300;
+            document.getElementById('config-auto-refresh').checked = config.auto_refresh !== false;
+            document.getElementById('config-refresh-interval').value = config.refresh_interval || 30;
+            
+            // 更新全局设置
+            autoRefreshEnabled = config.auto_refresh !== false;
+            autoRefreshInterval = config.refresh_interval || 30;
+            document.getElementById('switch-auto-refresh').checked = autoRefreshEnabled;
+            document.getElementById('refresh-interval-slider').value = autoRefreshInterval;
+            document.getElementById('refresh-interval-display').textContent = autoRefreshInterval;
+            
+            // 更新显示
+            document.getElementById('config-pool-version').textContent = '1.0.0';
+            const now = new Date();
+            document.getElementById('config-last-update').textContent = now.toLocaleString('zh-CN');
+            
+            // 更新自动刷新定时器
+            setupAutoRefresh();
+        }
+        
+        async function saveConfig(event) {
+            event.preventDefault();
+            
+            const config = {
+                scheduling_mode: document.getElementById('config-scheduling').value,
+                health_check_interval: parseInt(document.getElementById('config-health-interval').value),
+                auto_refresh: document.getElementById('config-auto-refresh').checked,
+                refresh_interval: parseInt(document.getElementById('config-refresh-interval').value)
+            };
+            
+            const result = await apiUpdateConfig(config);
+            if (result.success) {
+                showAlert('配置已保存', 'success');
+                loadConfig();
+            } else {
+                showAlert('保存配置失败', 'danger');
+            }
+        }
+        
+        // 自动刷新设置
+        function setupAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+            
+            if (autoRefreshEnabled && autoRefreshInterval > 0) {
+                refreshTimer = setInterval(() => {
+                    // 只有在仪表盘标签页激活时才刷新
+                    const activeTab = document.querySelector('#mainTabs .nav-link.active');
+                    if (activeTab && activeTab.id === 'dashboard-tab') {
+                        refreshDashboard();
+                    }
+                }, autoRefreshInterval * 1000);
+            }
+        }
+        
+        // 导出功能
+        async function generateExport() {
+            const format = document.getElementById('export-format').value;
+            const aliveOnly = document.getElementById('export-alive-only').checked;
+            
+            let proxies = currentProxies;
+            if (aliveOnly) {
+                proxies = proxies.filter(p => p.status === 'alive');
+            }
+            
+            let result = '';
+            if (format === 'text') {
+                result = proxies.map(p => p.str).join('\n');
+            } else if (format === 'json') {
+                result = JSON.stringify(proxies, null, 2);
+            } else if (format === 'csv') {
+                const headers = ['host', 'port', 'protocol', 'status', 'latency_ms', 'country_code'];
+                const rows = proxies.map(p => [
+                    p.host, p.port, p.protocol, p.status, p.latency_ms, p.country_code
+                ]);
+                result = headers.join(',') + '\n';
+                result += rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            }
+            
+            document.getElementById('export-result').value = result;
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化标签页
+            const triggerTabList = [].slice.call(document.querySelectorAll('#mainTabs button'));
+            triggerTabList.forEach(triggerEl => {
+                triggerEl.addEventListener('click', event => {
+                    event.preventDefault();
+                    const tabId = triggerEl.getAttribute('data-bs-target');
+                    const tab = new bootstrap.Tab(triggerEl);
+                    tab.show();
+                    
+                    // 切换到代理列表时刷新列表
+                    if (tabId === '#proxies') {
+                        refreshProxiesList();
+                    }
+                });
+            });
+            
+            // 绑定按钮事件
+            document.getElementById('btn-refresh').addEventListener('click', () => {
+                refreshDashboard();
+                showAlert('已刷新统计数据', 'info');
+            });
+            
+            document.getElementById('btn-refresh-proxies').addEventListener('click', () => {
+                refreshProxiesList();
+                showAlert('已刷新代理列表', 'info');
+            });
+            
+            document.getElementById('btn-check-all').addEventListener('click', async () => {
+                if (!confirm('确定执行全量健康检测吗？这可能需要一些时间。')) return;
+                
+                showAlert('正在执行全量健康检测...', 'info');
+                const result = await apiCheckAll();
+                if (result.success) {
+                    showAlert('全量健康检测完成', 'success');
+                    refreshDashboard();
+                    refreshProxiesList();
+                } else {
+                    showAlert(`检测失败: ${result.error || '未知错误'}`, 'danger');
+                }
+            });
+            
+            document.getElementById('btn-reset-dead').addEventListener('click', async () => {
+                if (!confirm('确定重置所有死亡代理标记吗？这将给死亡代理第二次机会。')) return;
+                
+                // 这里需要实现 API，暂时模拟
+                showAlert('功能待实现', 'warning');
+            });
+            
+            document.getElementById('btn-add-sample').addEventListener('click', () => {
+                const samples = [
+                    'socks5://127.0.0.1:1080',
+                    'http://proxy.example.com:8080',
+                    'socks5://user:pass@proxy.example.com:1080',
+                    '192.168.1.100:3128'
+                ];
+                document.getElementById('proxies-textarea').value = samples.join('\n');
+                showAlert('已添加示例代理到文本框', 'info');
+            });
+            
+            document.getElementById('btn-clear-all').addEventListener('click', () => {
+                if (!confirm('确定清空整个代理池吗？此操作不可撤销！')) return;
+                
+                // 需要实现清空 API
+                showAlert('功能待实现', 'warning');
+            });
+            
+            document.getElementById('btn-add-proxies').addEventListener('click', async () => {
+                const textarea = document.getElementById('proxies-textarea');
+                const lines = textarea.value.split('\n').filter(line => line.trim() !== '');
+                
+                if (lines.length === 0) {
+                    showAlert('请输入至少一个代理', 'warning', 'add-result');
+                    return;
+                }
+                
+                showAlert('正在添加代理...', 'info', 'add-result');
+                const result = await apiAddProxies(lines);
+                
+                let message = '';
+                if (result.success) {
+                    message += `<p>成功添加 ${result.added.length} 个代理</p>`;
+                    if (result.errors.length > 0) {
+                        message += `<p>失败 ${result.errors.length} 个:</p><ul>`;
+                        result.errors.forEach(err => message += `<li>${err}</li>`);
+                        message += '</ul>';
+                    }
+                    showAlert(message, 'success', 'add-result');
+                    
+                    // 清空文本框
+                    if (result.errors.length === 0) {
+                        textarea.value = '';
+                    }
+                    
+                    // 刷新列表和统计
+                    refreshDashboard();
+                    refreshProxiesList();
+                    
+                    // 切换到代理列表标签页
+                    const proxiesTab = new bootstrap.Tab(document.getElementById('proxies-tab'));
+                    proxiesTab.show();
+                } else {
+                    showAlert(`添加失败: ${result.error || '未知错误'}`, 'danger', 'add-result');
+                }
+            });
+            
+            document.getElementById('btn-clear-text').addEventListener('click', () => {
+                document.getElementById('proxies-textarea').value = '';
+            });
+            
+            document.getElementById('btn-paste-example').addEventListener('click', () => {
+                const examples = `socks5://user:password@proxy1.example.com:1080
+http://proxy2.example.com:8080
+socks5://proxy3.example.com:1080
+192.168.1.100:3128:myuser:mypass
+127.0.0.1:1080`;
+                document.getElementById('proxies-textarea').value = examples;
+            });
+            
+            // 配置表单
+            document.getElementById('config-form').addEventListener('submit', saveConfig);
+            document.getElementById('btn-load-config').addEventListener('click', loadConfig);
+            
+            // 自动刷新控制
+            document.getElementById('switch-auto-refresh').addEventListener('change', function() {
+                autoRefreshEnabled = this.checked;
+                setupAutoRefresh();
+            });
+            
+            document.getElementById('refresh-interval-slider').addEventListener('input', function() {
+                const value = this.value;
+                document.getElementById('refresh-interval-display').textContent = value;
+                autoRefreshInterval = parseInt(value);
+                setupAutoRefresh();
+            });
+            
+            // 导出功能
+            document.getElementById('btn-export').addEventListener('click', generateExport);
+            document.getElementById('btn-copy-export').addEventListener('click', () => {
+                const textarea = document.getElementById('export-result');
+                textarea.select();
+                document.execCommand('copy');
+                showAlert('已复制到剪贴板', 'success');
+            });
+            
+            // 状态过滤
+            document.getElementById('filter-status').addEventListener('change', refreshProxiesList);
+            
+            // 初始加载
+            refreshDashboard();
+            loadConfig();
+            setupAutoRefresh();
+            
+            // 首次加载代理列表（如果当前是代理列表标签页）
+            const activeTab = document.querySelector('#mainTabs .nav-link.active');
+            if (activeTab && activeTab.id === 'proxies-tab') {
+                refreshProxiesList();
+            }
+        });
+    </script>
+</body>
+</html>
